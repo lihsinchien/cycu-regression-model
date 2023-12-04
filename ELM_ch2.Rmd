@@ -1,0 +1,164 @@
+---
+title: "ELM_Ch2"
+author: "Li-Hsin Chien"
+date: "2023-11-27"
+output: html_document
+---
+
+
+### Heart Disease Example
+
+3154 healthy young men aged 39-59 from the San Francisco area were assessed for their personality type. All were free from coronary heart disease at the start of the research. Eight and a half years later change in this situation was recorded.
+
+
+
+```{r }
+library(faraway)
+
+data(wcgs, package="faraway")
+
+head(wcgs)
+
+
+```
+
+### 2.2 Fit logistic regression model
+
+$y$: chd, 是否有冠狀動脈心臟病 (coronary heat disease)
+
+$x=(height, cigs)$: 身高(height), 每天抽幾支菸 (cigs)
+
+$$ log(odds)=log(\frac{p}{1-p})=\beta_0+\beta_1 x_1 +\beta_2 x_2 $$
+
+```{r}
+summary(wcgs$chd) #factor, levels: no yes, 會根據字母順序coding 成 0 & 1 (no & yes)
+lmod <- glm(chd~height + cigs, family = binomial, wcgs)
+summary(lmod)
+(b<-lmod$coefficients)  #MLE beta_hat
+(b.cov<-summary(lmod)$cov.unscaled) #MLE var(beta_hat)
+```
+
+$$ odds=e^{\beta_0}\cdot e^{\beta_1 x_1}\cdot e^{\beta_2 x_2} $$
+```{r}
+exp(b)
+```
+
+#### Q: 每天多抽一包菸 (20 支) 的影響?
+
+```{r}
+exp(b[3]*20)
+```
+
+#### A: 每天多抽一包菸，會使得得到心臟病的 odds 增加 59%。(會使odds變成原來的 1.59倍)
+
+### 2.3 Inference
+
+Deviance for model S, $D_S$
+$$ D= 2 \cdot \{ \log L_L(\hat{\beta}_L)-\log L_S (\hat{\beta}_S)\}=-2\sum_{i=1}^n {y_i \cdot logit(\hat{p}_i) + log(1-\hat{p}_i)}  $$
+where $L_L$ a saturated model, $\hat{p}_L=y_i$
+
+#### likelihood ratio test
+
+$H_0: \beta_1=0 (S)$ ; $H_1: o.w. (L)$, test statistic 
+$$ 2\cdot log(\frac{L_L}{L_S})=D_S-D_L \sim \chi^2_{df=L\backslash S=1} $$
+
+```{r}
+summary(lmod)
+
+(D_L <- lmod$deviance)
+
+lmod.s<-glm(chd~ cigs, family = binomial, wcgs)
+D_S <- lmod.s$deviance
+
+t.lr<-D_S-D_L
+1-pchisq(t.lr,1)
+
+anova(lmod.s,lmod, test="Chi")
+
+drop1(lmod,test="Chi")
+```
+
+#### Wald test
+
+```{r}
+b2<-b[2]
+b2.sd<-sqrt(diag(b.cov)[2])
+(t.wald<-b2/b2.sd) #H_0: beta_1=0
+2*(1-pnorm(t.wald))
+
+summary(lmod)
+```
+
+#### CI
+
+$(1-\alpha)%$ CI for $\beta_i$: 
+$$ \hat{\beta}_i \pm z^{\alpha/2} se(\hat{\beta}_i) $$
+$(1-\alpha)%$ CI for $e^{\beta_i}$: 
+$$ exp\{\hat{\beta}_i \pm z^{\alpha/2} se(\hat{\beta}_i)\} $$
+
+```{r}
+b2 + c(-1,1)*1.96*b2.sd
+confint(lmod)
+
+exp(b2 + c(-1,1)*1.96*b2.sd)
+exp(confint(lmod))
+
+```
+
+### 2.4 diagnostics
+
+```{r}
+halfnorm(hatvalues(lmod))
+wcgs[ which(hatvalues(lmod)>0.015),c("height","cigs","chd")]
+
+par(mfrow=c(1,2))
+halfnorm(hatvalues(lmod)[wcgs$chd=="yes"],main="chd=yes")
+halfnorm(hatvalues(lmod)[wcgs$chd=="no"],main="chd=no")
+```
+
+### 2.5 model selection
+
+$AIC=-2logL+2q=deviance+2q$
+
+```{r}
+wcgs$bmi <- with(wcgs, 703*wcgs$weight/(wcgs$height^2))
+lmod <- glm(chd ~ age + height + weight +bmi + sdp + dbp + chol + dibep + cigs +arcus, family=binomial, wcgs)
+lmodr <- step(lmod, trace=1) # trace=0: 不顯示過程
+sumary(lmodr)
+
+```
+
+### 2.6 goodness of fit
+
+#### calibration: $p_i$ 是否有估準?
+
+```{r}
+library(plyr)
+wcgsm <- na.omit(wcgs) #去除有 missing 的資料
+wcgsm <- mutate(wcgsm, predprob=predict(lmod,type="response")) #增加predprob變數
+
+cut.point<-unique(quantile(wcgsm$predprob, (1:10)/11))
+
+p.g<-cut(wcgsm$predprob, breaks=cut.point)
+pred.p.g<-tapply(wcgsm$predprob,p.g,mean)
+obs.n.g<-tapply(wcgsm$chd,p.g,function(x) sum(x=="yes"))
+m.g<-tapply(wcgsm$chd,p.g,length)
+obs.p.g<-obs.n.g/m.g
+sd.g<-sqrt(pred.p.g*(1-pred.p.g)/m.g)
+
+plot(pred.p.g,obs.p.g,xlab="Predicted prob.",ylab="Observed prob.",ylim=c(0,0.2))
+
+apply(cbind(pred.p.g,obs.p.g,sd.g),1,function(x) segments(x[1],x[2]-2*x[3],x[1],x[2]+2*x[3],col="gray"))
+abline(a=0,b=1,col=2)
+```
+
+#### discremination: $y_i$ 是否有分好?
+
+```{r}
+#install.packages("pROC")
+library(pROC)
+roc.lmod<-roc(data=wcgsm,response=chd,predictor=predprob)
+auc(roc.lmod)
+plot(roc.lmod)
+```
+
