@@ -39,3 +39,29 @@ halfnorm(residuals(bmod))
 (sigma2 <- sum(residuals(bmod,type="pearson")^2)/12)
 drop1(bmod,scale=sigma2,test="F")
 summary(bmod,dispersion=sigma2)
+
+
+## other link function
+
+data(bliss)
+bliss
+mlogit<-glm(cbind(dead,alive)~conc, family="binomial",data=bliss)
+mprobit<-glm(cbind(dead,alive)~conc, family="binomial"(link=probit),data=bliss)
+mcloglog<-glm(cbind(dead,alive)~conc, family="binomial"(link=cloglog),data=bliss)
+mcauchit<-glm(cbind(dead,alive)~conc, family="binomial"(link=cauchit),data=bliss)
+
+predval <- sapply(list(mlogit,mprobit,mcloglog,mcauchit),fitted)
+dimnames(predval)<-list(0:4,c("logit","probit","cloglog","cauchit"))
+round(predval,3)
+
+dose<-seq(-4,8,0.2)
+predval <-sapply(list(mlogit,mprobit,mcloglog,mcauchit),function(m) predict(m,data.frame(conc=dose),type="response"))
+colnames(predval) <- c("logit","probit","cloglog","cauchit")
+predval <- data.frame(dose,predval)
+
+
+plot(dose,predval$logit,type="l")
+lines(dose,predval$probit,col=2)
+lines(dose,predval$cloglog,col=3)
+lines(dose,predval$cauchit,col=4)
+legend("topleft",c("logit","probit","cloglog","cauchit"),lty=1,col=1:4)
