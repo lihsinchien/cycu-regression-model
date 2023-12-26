@@ -1,0 +1,94 @@
+---
+title: "Regression tree"
+author: "Li-Hsin Chien"
+date: "2023-12-26"
+output: html_document
+---
+
+## Chapter 16 Trees
+
+### Section 16.1 Regression Trees
+
+資料: *ozone* :A study the relationship between atmospheric ozone concentration and meteorology in the Los Angeles Basin in 1976. A number of cases with missing variables have been removed for simplicity.
+
+讀入資料
+```{r }
+library(faraway)
+data(ozone)
+?ozone
+```
+
+Tree 分析套件: *rpart*
+
+```{r}
+
+#install.packages("rpart")
+library(rpart)
+
+(tmod<-rpart(O3~.,ozone))
+
+```
+
+第一個 split 為 temp 變數 (溫度)，切點為 67.5; 項目內容依序為 ("node 編號", "變數+切點", "node 內樣本數", "deviance = RSS","node 預測值")
+
+*代表 terminal node
+
+```{r}
+plot(tmod)
+text(tmod)
+plot(tmod, compress=T, uniform=T, branch=.4)
+text(tmod)
+```
+
+```{r}
+#install.packages("rpart.plot")
+library(rpart.plot)
+prp(tmod,         # 模型
+    faclen=0,           # 呈現的變數不要縮寫
+    fallen.leaves=TRUE, # 讓樹枝以垂直方式呈現
+    shadow.col="gray",  # 最下面的節點塗上陰影
+    # number of correct classifications / number of observations in that node
+    extra=1)  
+```
+
+```{r}
+plot(jitter(predict(tmod)),residuals(tmod),xlab="Fitted",ylab="Residuals")
+abline(h=0)
+
+```
+
+利用 Tree model 預測新樣本 (新樣本的covariate 為 median)
+
+```{r}
+(x0<- apply(ozone[,-1],2,median))
+predict(tmod,data.frame(t(x0)))
+```
+
+### Section 16.2 Tree Pruning 
+
+```{r}
+set.seed(123)
+tmode <-rpart(O3~., ozone, cp=0.001)
+printcp(tmode)
+plotcp(tmode)
+```
+
+
+
+```{r}
+rpart.plot(tmod,type=3)
+```
+
+```{r}
+tmodr<-prune.rpart(tmod,0.0154)
+1-sum(residuals(tmodr)^2)/sum((ozone$O3-mean(ozone$O3))^2)
+
+```
+
+
+```{r}
+set.seed(123)
+tmod <- rpart(O3~., ozone[sample(330,165),])
+(tmods <- prune.rpart(tmod,0.0154))
+```
+
