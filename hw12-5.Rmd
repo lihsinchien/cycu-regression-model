@@ -1,0 +1,64 @@
+---
+title: "HW 12-5"
+author: "lhchien"
+date: "2023-12-26"
+output: html_document
+---
+
+載入*pima*
+```{r}
+library(faraway)
+data(pima)
+```
+#### (a)
+
+```{r}
+summary(pima)
+
+```
+
+glucose, diastolic, triceps, insulin, bmi 等變數等於 0 不合理, 將這些變數為 0 的資料設為 missing
+
+```{r}
+pima$diastolic[pima$diastolic==0] <- NA
+pima$glucose[pima$glucose==0] <- NA
+pima$triceps[pima$triceps==0] <- NA
+pima$insulin[pima$insulin==0] <- NA
+pima$bmi[pima$bmi==0] <- NA
+```
+
+
+#### (b)
+
+```{r}
+r<-glm(test~.,family="binomial",data=pima)
+summary(r)
+```
+
+此模型的 deviance 為 344.02 (383 degrees of freedom)
+Goodness of fit test: $H_0$: 所有變數係數=0 vs $H_1$: 至少有一個變數係數不等於 0
+$T = $null deviance$ - $deviance$ = 498.10 - 344.02 \sim \chi^2_{df=391-383}$
+
+```{r}
+T<-r$null.deviance-r$deviance #test statistics
+T.df<-r$df.null-r$df.residual
+1-pchisq(T,T.df) # p-value
+```
+
+The p-value$\approx$ 0, reject $H_0$. This model fits the data.
+
+#### (c)
+
+```{r}
+summary(pima$bmi)
+```
+
+
+Woman A: bmi = 1st quantile = 27.5
+Woman B: bmi = 3rd quantile = 36.6
+
+Assuming that all ther factors are held constant, 
+
+ 
+
+
