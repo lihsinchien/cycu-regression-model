@@ -427,8 +427,8 @@ summary(r)</code></pre>
 <p>Goodness of fit test: <span class="math inline">\(H_0\)</span>:
 所有變數係數=0 vs <span class="math inline">\(H_1\)</span>:
 至少有一個變數係數不等於 0</p>
-<p><span class="math display">\[T = null deviance - deviance = 498.10 -
-344.02 \sim \chi^2_{df=391-383}\]</span></p>
+<p><span class="math display">\[T = \text{null deviance} -
+\text{deviance} = 498.10 - 344.02 \sim \chi^2_{df=391-383}\]</span></p>
 <pre class="r"><code>T&lt;-r$null.deviance-r$deviance #test statistics
 T.df&lt;-r$df.null-r$df.residual
 1-pchisq(T,T.df) # p-value</code></pre>
@@ -447,28 +447,28 @@ T.df&lt;-r$df.null-r$df.residual
 <p>Woman A: bmi = 1st quantile <span class="math inline">\(\approx\)</span> 27.5</p>
 <p>Woman B: bmi = 3rd quantile <span class="math inline">\(\approx\)</span> 36.6</p>
 <p>The coefficient of bmi <span class="math inline">\(\approx\)</span>
-0.7</p>
+0.07</p>
 <p><span class="math display">\[  \log \frac{p_B}{1-p_B} - \log
-\frac{p_A}{1-p_A} = (36.6-27.5) \times \hat{\beta} =9.7\cdot \hat{\beta}
+\frac{p_A}{1-p_A} = (36.6-27.5) \times \hat{\beta} =9.1\cdot \hat{\beta}
 \approx 0.642\]</span> <span class="math display">\[
 \frac{\frac{p_B}{1-p_B}}{\frac{p_A}{1-p_A}} \approx e^{0.642} \approx
 1.9 \]</span></p>
-<p><span class="math display">\[  se(9.7\hat{\beta}) =9.7\cdot
+<p><span class="math display">\[  se(9.1\hat{\beta}) =9.1\cdot
 se(\hat{\beta}) \]</span></p>
-<p>The 95% CI for <span class="math inline">\(9.7 \hat{\beta}\)</span>
-would be</p>
+<p>The 95% CI for <span class="math inline">\(9.1 \cdot
+\hat{\beta}\)</span> would be</p>
 <pre class="r"><code>se.beta&lt;-sqrt(summary(r)$cov.unscaled[7,7])
-ci.diff&lt;-9.7*r$coefficient[7]+c(-1,1)*qnorm(0.975)*9.7*se.beta
+ci.diff&lt;-9.1*r$coefficient[7]+c(-1,1)*qnorm(0.975)*9.1*se.beta
 round(ci.diff, digits=3)</code></pre>
-<pre><code>## [1] 0.164 1.204</code></pre>
+<pre><code>## [1] 0.154 1.130</code></pre>
 <pre class="r"><code>round(exp(ci.diff),digits=3)</code></pre>
-<pre><code>## [1] 1.179 3.334</code></pre>
+<pre><code>## [1] 1.167 3.094</code></pre>
 <p>假設其他變數值固定的情況下，bmi 從 1st quantile (27.5) 增加到 3rd
 quantile (36.6), 則 the log odds of testing positive for diabetes 將增加
-0.642, 95% 信賴區間為 (0.164,1.204)</p>
+0.642, 95% 信賴區間為 (0.154,1.130)</p>
 <p>或可解釋為: 假設其他變數值固定的情況下，bmi 從 1st quantile (27.5)
 增加到 3rd quantile (36.6), 則 the odds of testing positive for diabetes
-將為原來的 1.9 倍, 95% 信賴區間為 (1.1793.334)。</p>
+將為原來的 1.9 倍, 95% 信賴區間為 (1.167, 3.094)。</p>
 </div>
 <div id="d" class="section level4">
 <h4>(d)</h4>
