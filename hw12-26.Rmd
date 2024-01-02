@@ -1,0 +1,120 @@
+---
+title: "HW12-30"
+author: "Li-Hsin Chien"
+date: "2023-12-29"
+output: html_document
+---
+The dataset *esdcomp* was recorded on 44 doctors working in an emergency service at a hospital to study the factors affecting the number of complaints recieved.
+
+```{r}
+library(faraway)
+data(esdcomp)
+```
+
+##### (a) Consider the rate of complaints in terms of the number received in relation to the number of patient visits made. Plot this against each of the four potential predictors and comment on the relationships.
+
+```{r}
+rate<-esdcomp$complaints/esdcomp$visits
+par(mfrow=c(2,2))
+plot(rate~residency,data=esdcomp)
+plot(rate~gender,data=esdcomp)
+plot(rate~revenue,data=esdcomp)
+plot(rate~hours,data=esdcomp)
+
+```
+
+由圖形可以看出，residency, gender, revenue 似是和 rate of complaints 大小無關，hours 看起來有正相關，但也不明顯。
+
+##### (b) Fit a binomial GLM for the number of complaints out of the number of visits with the other four variables as predictors. Does this model fit the data?
+Perform this check numerically and graphically.
+```{r}
+bmod<-glm(cbind(complaints,visits-complaints)~.,family=binomial, data=esdcomp) 
+
+summary(bmod)
+```
+
+利用 goodness-of-fit test
+
+$$H_0: \text{Null model (所有係數均為零)  vs  }H_1: \text{Current model(至少有一個係數不為零) } $$
+
+test statistic: T = Deviance(Null model) - Deviance(current model)
+
+$$ T \sim \chi_{df_T} \text{, where } df_T=df_{null}-df_{current} $$
+
+
+```{r}
+t<-bmod$null.deviance-bmod$deviance
+t.df<-bmod$df.null-bmod$df.residual
+pchisq(t, t.df,lower=FALSE)
+```
+
+p-value = 0.062>0.05, not reject $H_0 \Rightarrow$ 此模型配適不好。
+
+```{r}
+phat<-bmod$fitted.values
+plot(rate, phat, ylab="Predicted rate", xlab="observed rate")
+abline(a=0,b=1)
+```
+
+上圖為每個醫生的 rate of complaints。由上圖可看出，預測值和觀測值無明顯線性相關，因此也可以得到此模型的配適結果不好。
+
+從模型配適結果，我們可以知道 residency, gender, revenue 這三個變數的影響均不顯著，若採取 backward selection, 只保留顯著的變數在模型當中，則我們可以得到的模型如下:
+
+##### (c) Check the significance of the four predictors in the binomial model. Give a numerical interpretation to the effect of any significant predictors.
+
+```{r}
+sumary(bmod)
+```
+
+令 *p* 代表 complaint 的比例
+
+$$\log \frac{\hat{p}}{1-\hat{p}} = -8.1209 - 0.2093 \cdot I(residency=Y) + 0.1957 \cdot I(gender=M ) +0.0016 \cdot (revenue) +0.0007 \cdot hours$$
+
+在考慮所有變數的模型中，只有 hours 的 p-value < 0.05。
+
+hours 的係數估計值為 0.0007, 代表在其他變數固定不變的情況下，醫生的工作時數 (hours) 每增加一單位， rate of complaints 的 log odds 增加 0.0007。
+
+或可解釋為，在其他變數固定不變的情況下，醫生的工作時數 (hours) 每增加一單位， rate of complaints 的 log odds 增加 $\exp(0.0007) \approx 1$。 
+
+##### (d) Fit an appropriate Poisson rate model for number of complaints that takes a comparable form to the binomial GLM fitted earlier. Does this model fit the data? Again check this numerically and graphically.
+
+```{r}
+pmod<-glm(complaints~.,family=poisson, data=esdcomp) 
+summary(pmod)
+```
+
+```{r}
+t.p<-pmod$null.deviance-pmod$deviance
+t.p.df<-pmod$df.null-pmod$df.residual
+pchisq(t.p, t.p.df,lower=FALSE)
+```
+goodness of fit test 下
+
+$$H_0: \text{Null model (所有係數均為零)  vs  }H_1: \text{Current model(至少有一個係數不為零) } $$
+p-value 為 1.93 e-07 < 0.05, reject $H_0 \Rightarrow$ 此模型至少有個係數不為零。
+故 this model fit the data。
+
+```{r}
+plot(esdcomp$complaints,pmod$fitted.values,xlab="observed numbers of complains",ylab="predicted numbers of complaints")
+abline(a=0,b=1)
+```
+
+由圖形可看出，預測次數和真實次數接近 45度線，因此模型有預測效果，this model fit the data。
+
+##### (e) Again check the significance of the predictors and provide a numerical interpretation. Compare the conclusions of the two models.
+
+在考慮所有變數的模型中，只有 visits 的 p-value = 0.005 < 0.05。
+
+visits 的係數估計值約為 0.001, 代表在其他變數固定不變的情況下，病人看病人數 (visits) 每增加 1000人， rate of complaints 的次數預期增加 $e^1 \approx 2.7$ 次。
+
+或在其他變數固定不變的情況下，醫生的工作時數 (hours) 每增加 1000人， complaints 次取取 log 預期增加 1。 
+
+##### (f)	Do the variable selection for the Poisson regression model. Write down the model.
+```{r}
+pmod.step<-step(pmod)
+summary(pmod.step)
+```
+
+經過 variable selection，模型中變數剩下 visits, residency, 預期 complaints 次數為 $\mu$
+
+$$ \log (\hat{\mu}) = -0.7274574 + 0.0008101 \cdot (visits) -0.3121729 \cdot I(residency=Y) $$

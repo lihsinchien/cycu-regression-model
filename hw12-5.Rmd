@@ -36,8 +36,10 @@ summary(r)
 ```
 
 此模型的 deviance 為 344.02 (383 degrees of freedom)
+
 Goodness of fit test: $H_0$: 所有變數係數=0 vs $H_1$: 至少有一個變數係數不等於 0
-$T = $null deviance$ - $deviance$ = 498.10 - 344.02 \sim \chi^2_{df=391-383}$
+
+$$T = null deviance - deviance = 498.10 - 344.02 \sim \chi^2_{df=391-383}$$
 
 ```{r}
 T<-r$null.deviance-r$deviance #test statistics
@@ -51,14 +53,113 @@ The p-value$\approx$ 0, reject $H_0$. This model fits the data.
 
 ```{r}
 summary(pima$bmi)
+r$coefficient[7]
 ```
 
 
-Woman A: bmi = 1st quantile = 27.5
-Woman B: bmi = 3rd quantile = 36.6
+Woman A: bmi = 1st quantile $\approx$ 27.5 
 
-Assuming that all ther factors are held constant, 
+Woman B: bmi = 3rd quantile $\approx$ 36.6 
 
- 
+The coefficient of bmi $\approx$ 0.7
 
+$$  \log \frac{p_B}{1-p_B} - \log \frac{p_A}{1-p_A} = (36.6-27.5) \times \hat{\beta} =9.7\cdot \hat{\beta} \approx 0.642$$
+$$ \frac{\frac{p_B}{1-p_B}}{\frac{p_A}{1-p_A}} \approx e^{0.642} \approx 1.9 $$
+
+$$  se(9.7\hat{\beta}) =9.7\cdot se(\hat{\beta}) $$
+
+The 95% CI for $9.7  \hat{\beta}$ would be
+
+
+```{r}
+se.beta<-sqrt(summary(r)$cov.unscaled[7,7])
+ci.diff<-9.7*r$coefficient[7]+c(-1,1)*qnorm(0.975)*9.7*se.beta
+round(ci.diff, digits=3)
+round(exp(ci.diff),digits=3)
+
+```
+
+
+假設其他變數值固定的情況下，bmi 從 1st quantile (27.5) 增加到 3rd quantile (36.6), 則 the log odds of testing positive for diabetes 將增加 0.642, 95% 信賴區間為 (0.164,1.204)
+
+或可解釋為: 假設其他變數值固定的情況下，bmi 從 1st quantile (27.5) 增加到 3rd quantile (36.6), 則 the odds of testing positive for diabetes 將為原來的 1.9 倍, 95% 信賴區間為 (1.1793.334)。
+
+#### (d)
+
+diastolic 係數的估計值為 -0.00142, 因此根據模型估計結果，test positive 的人會有較低的 diastolic。
+
+```{r}
+mean(pima$diastolic[pima$test==1],na.rm=TRUE)
+mean(pima$diastolic[pima$test==0],na.rm=TRUE)
+```
+
+由敘述統計可知，test positive 的人，diastolic 平均值為 75.32，高於 test negative 的人 (70.88)
+
+在模型中diastolic 係數為負 (-0.00142)，代表 diastolic 增加會降低 test positive 的機率。這個估計值的結果看似和資料的敘述統計結果相矛盾，但此估計值的 p-value 為 0.9，不顯著，代表沒有足夠的證據顯示 diastolic 會影響到 test positive 的機率，因此模型估計結果與敘述統計結果並不矛盾。
+
+#### (e)
+
+```{r}
+x.new<-c( 1, 99, 64, 22, 76, 27, 0.25, 25)
+data.new<-data.frame(t(x.new))
+colnames(data.new)<-colnames(pima)[1:8]
+xb.p<-predict(r,data.new,se.fit =T)
+ilogit(xb.p$fit)
+round(ilogit(xb.p$fit+c(-1,1)*qnorm(0.975)*xb.p$se.fit),digits=3)
+
+```
+
+test positive 的機率預測值為 0.046，其 95% CI 為 (0.025,0.082)
+
+#### (f)
+
+在執行 *step()* 之前，先刪除變數有 missing 的樣本。
+
+```{r}
+pima.rm.na<-pima[rowSums(is.na(pima))==0,]
+dim(pima.rm.na)
+```
+
+資料完整的樣本數為 392。
+
+```{r}
+r.rm.na<-glm(test~.,family="binomial",data=pima.rm.na)
+r.rm.na.f<-step(r.rm.na)
+summary(r.rm.na.f)
+```
+
+backward variable selection 依序刪除 diastolic, insulin, triceps 等三個變數，最後得到的模型為
+
+$$ \log \frac{\hat{p}_i}{1-\hat{p}_i} = -9.992 + 0.084\cdot (pregnamt) +0.036 \cdot (glucose) +0.078 \cdot (bmi) +1.151 \cdot (diabetes) + 0.034 \cdot (age) $$
+
+#### (g)
+
+```{r}
+test.obs<-pima.rm.na$test
+test.pred<- ifelse(r.rm.na.f$fitted.values>=0.5,1,0)
+table(test.pred,test.obs)
+
+(sens<-75/130)
+(spes<-232/262)
+```
+
+在 test positive的機率值 p 的 cutoff 為 0.5 的情況下，sensitivity = 0.577, specificity = 0.885。
+
+#### (h)
+
+```{r}
+library(pROC)
+r.roc<-roc(test.obs,r.rm.na.f$fitted.values)
+r.roc$auc
+```
+
+Area under the ROC curve 為 0.8631 
+
+ROC curve 的圖形為:
+
+```{r}
+plot(r.roc)
+
+
+```
 
