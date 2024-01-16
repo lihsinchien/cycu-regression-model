@@ -1,0 +1,105 @@
+---
+title: "hw2"
+author: "Li-Hsin Chien"
+date: "2024-01-15"
+output: html_document
+---
+*1.	For the prostate data, fit a model with lpsa as the response and the other variables as predictors:*
+
+```{r}
+library(faraway)
+data(prostate)
+
+r<-lm(lpsa~.,data=prostate)
+summary(r)
+
+```
+
+*(a)	Compute 95% Cis for the parameter associated with age. Using just these intervals, what could we have deduced about the p-value for age in the regression summary?*
+
+
+```{r}
+confint(r)
+```
+
+變數 age 的 95% CI 為 (-0.042,0.003)，區間包含 0, 因此可推得在 significant level $alpha = 0.05$ 下的假設檢定，$H_0$: age 係數為 0，$H_1$: otherwise 將無法拒絕虛無假設。
+
+由 regression summary 可得到 p-value for age = 0.082 > 0.05，無法拒絕年齡係數為零的虛無假設。 
+
+*(b)	Which variables are statistically significant at the 5% level?*
+
+lcavol, lweight, svi 等 3 variables, p-values 均小於 0.05
+
+
+*(c)	Fit a model with age and lcavol as a predictor and use an F-test to compare it to the full model.*
+
+```{r}
+r1<-lm(lpsa~age+lcavol, data=prostate)
+anova(r1,r)
+
+```
+
+p-value = 0.00023 < 0.05, 因此只放 age 及 lcavol 的 model 和 full model 有顯著不同。
+
+*2.	Using the teengamb data, fit a model with gamble as the response and the other variables as predictors. Predict the amount that a male with average (given these data) status, income and verbal score would gamble along with an appropriate 95% CI.*
+
+```{r}
+data(teengamb)
+r2<-lm(gamble~.,data=teengamb)
+
+new.data<-data.frame("sex"=0,t(colMeans(teengamb[,2:4])))
+new.data.med<-data.frame("sex"=0,t(apply(teengamb[,2:4],2,median)))
+
+predict(r2,new.data,interval="prediction")#average
+predict(r2,new.data.med,interval="prediction")#median
+```
+
+新樣本為男性、其他變數為資料平均值，其 gamble 的預測值為 28.243，95% CI: (-18.515,75.000)。
+
+*3.	Using the sat dataset, fit a model with the total SAT score as the response and expend, salary, ratio and takers as predictors. Perform regression diagnostics on this model to answer the following questions. Display any plots that are relevant. Do not provide any plots about which you have nothing to say. *
+
+
+```{r}
+data(sat)
+r3<-lm(total~expend+salary+ratio+takers,data=sat)
+summary(r3)
+
+par(mfrow=c(2,2))
+plot(r3)
+
+```
+
+*(a)	Check the constant variance assumption for the errors.*
+
+由 "Residuals vs Fitted" 的圖，可看到 residuals 的分散程度和 fitted values 的大小無明顯差異，故看起來沒有違反 constant variance assumption。
+
+*(b)	Check the normality assumption.*
+
+由 "Q-Q Residuals" 的圖，樣本點均在 45度線附近，因此看起來沒有違反 normality assumption。
+
+*(c)	Check for the largest leverage points.*
+
+```{r}
+hatv <- hatvalues(r3)
+head(sort(hatv,decreasing = T))
+
+```
+
+Utah 的 leverage 最大，為 0.292。由 "Residuals vs Leverage" 的圖，也可看出 Utah 的 leverage 最大。
+
+
+
+
+*(d)	Check for the possible outlier.*
+
+由 "Q-Q Residuals" 的圖，West Virginia 最為偏離 45度線，有可能為 outlier。
+
+*(e)	Check for the possible influential points.*
+
+由 "Residuals vs Leverage" 的圖，Utah 有最大的 Cook's distance
+
+```{r}
+halfnorm(cooks.distance(r3), 3, labs=rownames(sat), ylab="Cook's distances")
+```
+
+由 haf-normal plot 也可看出，Utah 的 Cook's distance 和其他樣本也有差距。故 Utah 為 possible influential point。
