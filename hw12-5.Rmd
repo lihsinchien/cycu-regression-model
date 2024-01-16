@@ -39,7 +39,7 @@ summary(r)
 
 Goodness of fit test: $H_0$: 所有變數係數=0 vs $H_1$: 至少有一個變數係數不等於 0
 
-$$T = null deviance - deviance = 498.10 - 344.02 \sim \chi^2_{df=391-383}$$
+$$T = \text{null deviance} - \text{deviance} = 498.10 - 344.02 \sim \chi^2_{df=391-383}$$
 
 ```{r}
 T<-r$null.deviance-r$deviance #test statistics
@@ -61,28 +61,28 @@ Woman A: bmi = 1st quantile $\approx$ 27.5
 
 Woman B: bmi = 3rd quantile $\approx$ 36.6 
 
-The coefficient of bmi $\approx$ 0.7
+The coefficient of bmi $\approx$ 0.07
 
-$$  \log \frac{p_B}{1-p_B} - \log \frac{p_A}{1-p_A} = (36.6-27.5) \times \hat{\beta} =9.7\cdot \hat{\beta} \approx 0.642$$
+$$  \log \frac{p_B}{1-p_B} - \log \frac{p_A}{1-p_A} = (36.6-27.5) \times \hat{\beta} =9.1\cdot \hat{\beta} \approx 0.642$$
 $$ \frac{\frac{p_B}{1-p_B}}{\frac{p_A}{1-p_A}} \approx e^{0.642} \approx 1.9 $$
 
-$$  se(9.7\hat{\beta}) =9.7\cdot se(\hat{\beta}) $$
+$$  se(9.1\hat{\beta}) =9.1\cdot se(\hat{\beta}) $$
 
-The 95% CI for $9.7  \hat{\beta}$ would be
+The 95% CI for $9.1 \cdot \hat{\beta}$ would be
 
 
 ```{r}
 se.beta<-sqrt(summary(r)$cov.unscaled[7,7])
-ci.diff<-9.7*r$coefficient[7]+c(-1,1)*qnorm(0.975)*9.7*se.beta
+ci.diff<-9.1*r$coefficient[7]+c(-1,1)*qnorm(0.975)*9.1*se.beta
 round(ci.diff, digits=3)
 round(exp(ci.diff),digits=3)
 
 ```
 
 
-假設其他變數值固定的情況下，bmi 從 1st quantile (27.5) 增加到 3rd quantile (36.6), 則 the log odds of testing positive for diabetes 將增加 0.642, 95% 信賴區間為 (0.164,1.204)
+假設其他變數值固定的情況下，bmi 從 1st quantile (27.5) 增加到 3rd quantile (36.6), 則 the log odds of testing positive for diabetes 將增加 0.642, 95% 信賴區間為 (0.154,1.130)
 
-或可解釋為: 假設其他變數值固定的情況下，bmi 從 1st quantile (27.5) 增加到 3rd quantile (36.6), 則 the odds of testing positive for diabetes 將為原來的 1.9 倍, 95% 信賴區間為 (1.1793.334)。
+或可解釋為: 假設其他變數值固定的情況下，bmi 從 1st quantile (27.5) 增加到 3rd quantile (36.6), 則 the odds of testing positive for diabetes 將為原來的 1.9 倍, 95% 信賴區間為 (1.167, 3.094)。
 
 #### (d)
 
