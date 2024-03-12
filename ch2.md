@@ -23,7 +23,7 @@ species and several geographic variables is of interest. The original
 dataset contained several missing values which have been filled for
 convenience. See the galamiss dataset for the original version.
 
-Format: The dataset contains the following variables
+Format: The data set contains the following variables
 
 1.  Species: the number of plant species found on the island
 
