@@ -1,0 +1,64 @@
+---
+title: "hw1"
+author: "Li-Hsin Chien"
+date: "2024-01-16"
+output: html_document
+---
+
+*The dataset teengamb concerns a study of teenage gambling in Britain. Fit a regression model with the expenditure on gambling as the response and the sex, status, income and verbal score as predictors. Present the output.*
+
+```{r}
+library(faraway)
+data(teengamb)
+r<-lm(gamble~sex+status+income+verbal, data=teengamb)
+summary(r)
+
+```
+
+*(a) What percentage of variation in the response is explained by these predictors?*
+
+$R^2 = 0.5267$. The percentage of variation in the response is 52.7%. 
+
+*(b) Which observation has the largest (positive) residual? Give the case number.*
+
+```{r}
+r.res<-r$residuals
+max(r.res)
+which.max(r.res)
+```
+
+The observationcase with the case number 24 has the largest positive residual (94.25).
+
+*(c) Computet the mean and median of the residuals. *
+
+```{r}
+mean(r.res)
+median(r.res)
+```
+
+The mean of the residuals = 0.
+The median of the residuals = -1.451.
+
+*(d) Compute the correlation of the residuals with the fitted values.*
+
+```{r}
+cor(r$fitted.values, r.res)
+```
+
+The correlation of the residuals with the fitted values = 0.
+
+*(e) Compute the correlation of the residuals with the income.*
+
+```{r}
+cor(teengamb$gamble, r.res)
+```
+
+The correlation of the residuals with the income = 0.688.
+
+*(f) For all other predictors held constant, what would be the difference in predicted expenditure on gambling for a male comapred to a female?*
+
+male: sex = 0
+
+female: sex = 1
+
+Therefore, for all other predictors held constant, the difference in predicted expenditure on gampling for a male compared to a female is gamle(sex=0) - gamle(sex=1) = 22.118.
